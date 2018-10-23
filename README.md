@@ -17,30 +17,38 @@ Usage:
 
 Add params:
  -proxy 1.2.3.4:3128 - connect via proxy
- -proxyauth Domain/username:password  - proxy credendials
+ -proxyauth Domain/username:password  - proxy creds
  -proxytimeout 2000 - server and clients will wait for 2000 msec for proxy connections... (Sometime it should be up to 4000...)
- -useragent - User-Agent string
+ -useragent "Internet Explorer 9.99" - User-Agent used in proxy connection (sometimes it is usefull)
+ -agentpassword Password12345 - challenge password between client and server (if not match - server reply 301 redirect)
  
 
-in linux VPS 
-install Golang: apt install golang
-export GOPATH=~/go
-go get github.com/hashicorp/yamux
-go get github.com/armon/go-socks5
-go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
-go build
+Compile and Installation:
 
-in windows client:
-download and install golang
+Linux VPS
+- install Golang: apt install golang
+- export GOPATH=~/go
+- go get github.com/hashicorp/yamux
+- go get github.com/armon/go-socks5
+- go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
+- go build
+launch:
+./rsockstun -listen :8443 -socks 127.0.0.1:1080 -cert cert -agentpassword Password1234
 
-go get github.com/hashicorp/yamux
-go get github.com/armon/go-socks5
-go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
+Windows client:
+- download and install golang
+- go get github.com/hashicorp/yamux
+- go get github.com/armon/go-socks5
+- go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
 If you want to use proxy NTLM auth - patch go-ntlm\ntlm\payload.go packet:
 	bytes := utf16FromString(value) -> bytes := []byte(value)
 	p.Type = UnicodeStringPayload   -> p.Type = OemStringPayload
-go build
+- go build
+optional: to build as Windows GUI: go build -ldflags -H=windowsgui
+optional: to compress exe - use any exe packer, ex: UPX
+launch:
+rsockstun.exe -connect clientIP:8443 -agentpassword Password1234 -proxy proxy.domain.local:3128 -proxyauth Domain\userpame:userpass -useragent "Mozilla 5.0/IE Windows 10"
 
-By default client connects to server and send "magic bytes" to authorize on server. If server does not receive magic bytes from client (for example if spider or client browser connects to server ) then it send HTTP 301 redirect code to www.microsoft.com
+Client connects to server and send agentpassword to authorize on server. If server does not receive agentpassword or reveive wrong pass from client (for example if spider or client browser connects to server ) then it send HTTP 301 redirect code to www.microsoft.com
 
 ```

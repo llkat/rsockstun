@@ -10,7 +10,7 @@ import (
 
 	"time"
 	"bufio"
-	"encoding/hex"
+	//"encoding/hex"
 	"github.com/hashicorp/yamux"
 	"strings"
 
@@ -27,6 +27,7 @@ func listenForSocks(address string, certificate string) {
         return
     }
     config := &tls.Config{Certificates: []tls.Certificate{cer}}
+	//ln, err := net.Listen("tcp", address)
 	ln, err := tls.Listen("tcp", address, config)
 	if err != nil {
 		return
@@ -39,11 +40,7 @@ func listenForSocks(address string, certificate string) {
 			fmt.Fprintf(os.Stderr, "Errors accepting!")
 		}
 
-		//receiving and check magic bytes
-		magicbytes := "326731eeaf4422343099911243ee4387" +
-			"326731eeaf4422343099911243ee4387" +
-			"326731eeaf4422343099911243ee4387" +
-			"326731eeaf4422343099911243ee4387"
+
 		reader := bufio.NewReader(conn)
 
 		//read only 64 bytes with timeout=1-3 sec. So we haven't delay with browsers
@@ -56,7 +53,8 @@ func listenForSocks(address string, certificate string) {
 		//statusb,_ := ioutil.ReadAll(magicBuf)
 
 		//log.Printf("magic bytes: %v",statusb[:6])
-		if hex.EncodeToString(statusb) != magicbytes {
+		//if hex.EncodeToString(statusb) != magicbytes {
+		if string(statusb)[:len(agentpassword)] != agentpassword {
 			//do HTTP checks
 			log.Printf("Received request: %v",string(statusb[:64]))
 			status := string(statusb)
@@ -64,7 +62,6 @@ func listenForSocks(address string, certificate string) {
 				httpresonse := "HTTP/1.1 301 Moved Permanently"+
 					"\r\nContent-Type: text/html; charset=UTF-8"+
 					"\r\nLocation: https://www.microsoft.com/"+
-					"\r\nnnCoection: close"+
 					"\r\nServer: Apache"+
 					"\r\nContent-Length: 0"+
 					"\r\nConnection: close"+
