@@ -14,6 +14,7 @@ import (
 )
 
 var session *yamux.Session
+var agentpassword string
 
 func main() {
 
@@ -25,6 +26,7 @@ func main() {
 	optproxytimeout := flag.String("proxytimeout", "", "proxy response timeout (ms)")
 	proxyauthstring := flag.String("proxyauth", "", "proxy auth Domain/user:Password ")
 	optuseragent := flag.String("useragent", "", "User-Agent")
+	optpassword := flag.String("agentpassword", "", "connect password")
 	version := flag.Bool("version", false, "version information")
 	flag.Usage = func() {
 		fmt.Println("rsockstun - reverse socks5 server/client")
@@ -33,7 +35,7 @@ func main() {
 		fmt.Println("1) Start rsockstun -listen :8080 -socks 127.0.0.1:1080 on the client.")
 		fmt.Println("2) Start rsockstun -connect client:8080 on the server.")
 		fmt.Println("3) Connect to 127.0.0.1:1080 on the client with any socks5 client.")
-		fmt.Println("4) Start rsockstun -connect client:8080 -proxy 1.2.3.4:3124")
+		fmt.Println("4) Start rsockstun -connect client:8080 -proxy 1.2.3.4:3124 -proxyauth Domain/user:pass")
 		fmt.Println("X) Enjoy. :]")
 	}
 
@@ -52,6 +54,13 @@ func main() {
 		} else {
 			proxytout = time.Millisecond * 1000
 		}
+
+		if *optpassword != "" {
+			agentpassword = *optpassword
+		} else {
+			agentpassword = "RocksDefaultRequestRocksDefaultRequestRocksDefaultRequestRocks!!"
+		}
+
 		go listenForSocks(*listen, *certificate)
 		log.Fatal(listenForClients(*socks))
 	}
@@ -74,6 +83,12 @@ func main() {
 			domain = ""
 			username = ""
 			password = ""
+		}
+
+		if *optpassword != "" {
+			agentpassword = *optpassword
+		} else {
+			agentpassword = "RocksDefaultRequestRocksDefaultRequestRocksDefaultRequestRocks!!"
 		}
 
 		if *optuseragent != "" {
