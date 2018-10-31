@@ -20,7 +20,9 @@ Add params:
  -proxyauth Domain/username:password  - proxy creds
  -proxytimeout 2000 - server and clients will wait for 2000 msec for proxy connections... (Sometime it should be up to 4000...)
  -useragent "Internet Explorer 9.99" - User-Agent used in proxy connection (sometimes it is usefull)
- -agentpassword Password12345 - challenge password between client and server (if not match - server reply 301 redirect)
+ -pass Password12345 - challenge password between client and server (if not match - server reply 301 redirect)
+ -recn - reconnect times number. Default is 3. If 0 - infinite reconnection
+ -rect - time delay in secs between reconnection attempts. Default is 30
  
 
 Compile and Installation:

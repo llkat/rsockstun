@@ -181,7 +181,7 @@ func connectForSocks(address string, proxy string) error {
 		}
 	}
 
-	log.Println("Starting server")
+	log.Println("Starting client")
 	if proxy == "" {
 		conn.Write([]byte(agentpassword))
 		//time.Sleep(time.Second * 1)

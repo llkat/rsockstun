@@ -11,6 +11,7 @@ import (
 
 	"strconv"
 	"strings"
+
 )
 
 var session *yamux.Session
@@ -26,7 +27,10 @@ func main() {
 	optproxytimeout := flag.String("proxytimeout", "", "proxy response timeout (ms)")
 	proxyauthstring := flag.String("proxyauth", "", "proxy auth Domain/user:Password ")
 	optuseragent := flag.String("useragent", "", "User-Agent")
-	optpassword := flag.String("agentpassword", "", "connect password")
+	optpassword := flag.String("pass", "", "Connect password")
+	recn := flag.Int("recn", 3, "reconnection limit")
+
+	rect := flag.Int("rect", 30, "reconnection delay")
 	version := flag.Bool("version", false, "version information")
 	flag.Usage = func() {
 		fmt.Println("rsockstun - reverse socks5 server/client")
@@ -40,6 +44,7 @@ func main() {
 	}
 
 	flag.Parse()
+
 
 	if *version {
 		fmt.Println("rsockstun - reverse socks5 server/client")
@@ -66,7 +71,6 @@ func main() {
 	}
 
 	if *connect != "" {
-		log.Println("Connecting to the far end")
 
 		if *optproxytimeout != "" {
 			opttimeout,_ := strconv.Atoi(*optproxytimeout)
@@ -96,7 +100,29 @@ func main() {
 		} else {
 			useragent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko"
 		}
-		log.Fatal(connectForSocks(*connect,*proxy))
+		//log.Fatal(connectForSocks(*connect,*proxy))
+		if *recn >0 {
+			for i := 1; i <= *recn; i++ {
+				log.Printf("Connecting to the far end. Try %d of %d",i,*recn)
+				error1 := connectForSocks(*connect,*proxy)
+				log.Print(error1)
+				log.Printf("Sleeping for %d sec...",*rect)
+				tsleep := time.Second * time.Duration(*rect)
+				time.Sleep(tsleep)
+			}
+
+		} else {
+			for {
+				log.Printf("Reconnecting to the far end... ")
+				error1 := connectForSocks(*connect,*proxy)
+				log.Print(error1)
+				log.Printf("Sleeping for %d sec...",*rect)
+				tsleep := time.Second * time.Duration(*rect)
+				time.Sleep(tsleep)
+			}
+		}
+
+		log.Fatal("Ending...")
 	}
 
 	fmt.Fprintf(os.Stderr, "You must specify a listen port or a connect address")
