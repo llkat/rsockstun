@@ -49,7 +49,7 @@ openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes
 
  ```
 
-## Compile and Installation:
+## Compilation:
 ```
 Linux
 - git clone https://github.com/lokiuox/rsockstun
