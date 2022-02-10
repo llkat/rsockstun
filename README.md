@@ -1,9 +1,9 @@
 rsockstun
 ======
 
-Create a reverse SOCKS5 proxy via an SSL Tunnel, with support for HTTP proxies.
-Forked from https://github.com/llkat/rsockstun
-Based on https://github.com/brimstone/rsocks
+Create a reverse SOCKS5 proxy via an SSL Tunnel, with support for HTTP proxies.    
+Forked from https://github.com/llkat/rsockstun    
+Based on https://github.com/brimstone/rsocks    
 
 Usage:
 ------
