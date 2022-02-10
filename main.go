@@ -5,126 +5,131 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/hashicorp/yamux"
-	"time"
-
 	"strconv"
 	"strings"
-
+	"time"
 )
 
-var session *yamux.Session
 var agentpassword string
 
 func main() {
 
-	listen := flag.String("listen", "", "listen port for receiver address:port")
-	certificate := flag.String("cert", "", "certificate file")
-	socks := flag.String("socks", "127.0.0.1:1080", "socks address:port")
-	connect := flag.String("connect", "", "connect address:port")
-	proxy := flag.String("proxy", "", "proxy address:port")
-	optproxytimeout := flag.String("proxytimeout", "", "proxy response timeout (ms)")
-	proxyauthstring := flag.String("proxyauth", "", "proxy auth Domain/user:Password ")
-	optuseragent := flag.String("useragent", "", "User-Agent")
-	optpassword := flag.String("pass", "", "Connect password")
-	recn := flag.Int("recn", 3, "reconnection limit")
+	// Server parameters
+	serverFlags := flag.NewFlagSet("server", 0)
+	listen := serverFlags.String("listen", "0.0.0.0:8080", "Listen address for client connections")
+	certificate := serverFlags.String("cert", "server", "Server certificate file prefix")
+	socks := serverFlags.String("socks", "127.0.0.1:1080", "Listen address for the SOCKS5 proxy")
 
-	rect := flag.Int("rect", 30, "reconnection delay")
-	version := flag.Bool("version", false, "version information")
+	// Client parameters
+	clientFlags := flag.NewFlagSet("client", 0)
+	connect := clientFlags.String("connect", "", "address:port of the server to connect to")
+	proxy := clientFlags.String("proxy", "", "URI of the proxy to use to connect to the server [optional]")
+	proxyauthstring := clientFlags.String("proxyauth", "", "Proxy authentication in the format [Domain/]Username:Password [optional]")
+	optproxytimeout := clientFlags.String("proxytimeout", "1", "Proxy response timeout in seconds [optional]")
+	optuseragent := clientFlags.String("useragent", "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko", "User-Agent [optional]")
+	recn := clientFlags.Int("recn", 3, "Reconnection limit, 0 for infinite [optional]")
+	rect := clientFlags.Int("rect", 30, "Reconnection delay [optional]")
+
+	// Shared parameters
+	version := flag.Bool("version", false, "Version information")
+	optpassword := flag.String("pass", "", "Shared server/client password [optional]")
+
+	serverFlags.Usage = func() {
+		fmt.Println("SERVER MODE:")
+		fmt.Printf("%s server [-listen <listenAddr>] [-socks <socksAddr>] [options]\n", os.Args[0])
+		serverFlags.PrintDefaults()
+		fmt.Println()
+	}
+
+	clientFlags.Usage = func() {
+		fmt.Println("CLIENT MODE:")
+		fmt.Printf("%s client -connect <connectAddr> [-proxy <proxyURI>] [options]\n", os.Args[0])
+		clientFlags.PrintDefaults()
+		fmt.Println()
+	}
+
 	flag.Usage = func() {
 		fmt.Println("rsockstun - reverse socks5 server/client")
-		fmt.Println("")
-		fmt.Println("Usage:")
-		fmt.Println("1) Start rsockstun -listen :8080 -socks 127.0.0.1:1080 on the client.")
-		fmt.Println("2) Start rsockstun -connect client:8080 on the server.")
-		fmt.Println("3) Connect to 127.0.0.1:1080 on the client with any socks5 client.")
-		fmt.Println("4) Start rsockstun -connect client:8080 -proxy 1.2.3.4:3124 -proxyauth Domain/user:pass")
-		fmt.Println("X) Enjoy. :]")
+		fmt.Println()
+		serverFlags.Usage()
+		fmt.Println()
+		clientFlags.Usage()
+		fmt.Println()
+		fmt.Println("Note: you can generate a new server certificate with the following command:")
+		fmt.Println("openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes")
 	}
 
 	flag.Parse()
-
 
 	if *version {
 		fmt.Println("rsockstun - reverse socks5 server/client")
 		os.Exit(0)
 	}
 
-	if *listen != "" {
-		log.Println("Starting to listen for clients")
-		if *optproxytimeout != "" {
-			opttimeout,_ := strconv.Atoi(*optproxytimeout)
-			proxytout = time.Millisecond * time.Duration(opttimeout)
-		} else {
-			proxytout = time.Millisecond * 1000
-		}
-
-		if *optpassword != "" {
-			agentpassword = *optpassword
-		} else {
-			agentpassword = "RocksDefaultRequestRocksDefaultRequestRocksDefaultRequestRocks!!"
-		}
-
-		go listenForSocks(*listen, *certificate)
-		log.Fatal(listenForClients(*socks))
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
 	}
 
-	if *connect != "" {
+	// Defaults
 
-		if *optproxytimeout != "" {
-			opttimeout,_ := strconv.Atoi(*optproxytimeout)
-			proxytimeout = time.Millisecond * time.Duration(opttimeout)
-		} else {
-			proxytimeout = time.Millisecond * 1000
-		}
+	if *optproxytimeout != "" {
+		opttimeout, _ := strconv.Atoi(*optproxytimeout)
+		proxytimeout = time.Millisecond * time.Duration(opttimeout)
+	}
+
+	if *optpassword != "" {
+		agentpassword = *optpassword
+	} else {
+		agentpassword = "RocksDefaultRequestRocksDefaultRequestRocksDefaultRequestRocks!!"
+	}
+
+	useragent = *optuseragent
+
+	switch strings.ToLower(flag.Arg(0)) {
+
+	case "server":
+		// Server Mode
+		log.Println("Starting to listen for clients")
+
+		go clientListener(*listen, *certificate)
+		log.Fatal(socksListener(*socks))
+
+	case "client":
+		// Client Mode
 
 		if *proxyauthstring != "" {
-			domain = strings.Split(*proxyauthstring, "/")[0]
-			username = strings.Split(strings.Split(*proxyauthstring, "/")[1],":")[0]
-			password = strings.Split(strings.Split(*proxyauthstring, "/")[1],":")[1]
-		} else {
-			domain = ""
-			username = ""
-			password = ""
+			userpass := *proxyauthstring
+			if strings.Contains(strings.Split(userpass, ":")[0], "/") {
+				domain = strings.Split(userpass, "/")[0]
+				userpass = strings.Split(userpass, "/")[1]
+			}
+			username = strings.Split(userpass, ":")[0]
+			password = strings.Split(userpass, ":")[1]
 		}
 
-		if *optpassword != "" {
-			agentpassword = *optpassword
-		} else {
-			agentpassword = "RocksDefaultRequestRocksDefaultRequestRocksDefaultRequestRocks!!"
-		}
-
-		if *optuseragent != "" {
-			useragent = *optuseragent
-		} else {
-			useragent = "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko"
-		}
-		//log.Fatal(connectForSocks(*connect,*proxy))
-		if *recn >0 {
+		if *recn > 0 {
 			for i := 1; i <= *recn; i++ {
-				log.Printf("Connecting to the far end. Try %d of %d",i,*recn)
-				error1 := connectForSocks(*connect,*proxy)
+				log.Printf("Connecting to the far end. Try %d of %d", i, *recn)
+				error1 := connectToServer(*connect, *proxy)
 				log.Print(error1)
-				log.Printf("Sleeping for %d sec...",*rect)
+				log.Printf("Sleeping for %d sec...", *rect)
 				tsleep := time.Second * time.Duration(*rect)
 				time.Sleep(tsleep)
 			}
-
 		} else {
 			for {
 				log.Printf("Reconnecting to the far end... ")
-				error1 := connectForSocks(*connect,*proxy)
+				error1 := connectToServer(*connect, *proxy)
 				log.Print(error1)
-				log.Printf("Sleeping for %d sec...",*rect)
+				log.Printf("Sleeping for %d sec...", *rect)
 				tsleep := time.Second * time.Duration(*rect)
 				time.Sleep(tsleep)
 			}
 		}
-
 		log.Fatal("Ending...")
+	default:
+		fmt.Fprintf(os.Stderr, "You must specify a mode between \"server\" and \"client\".\n")
+		os.Exit(1)
 	}
-
-	fmt.Fprintf(os.Stderr, "You must specify a listen port or a connect address")
-	os.Exit(1)
 }
