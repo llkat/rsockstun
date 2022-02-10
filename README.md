@@ -51,29 +51,21 @@ openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes
 
 ## Compile and Installation:
 ```
-Linux VPS
-- install Golang: apt install golang
-- export GOPATH=~/go
-- go get github.com/hashicorp/yamux
-- go get github.com/armon/go-socks5
-- go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
+Linux
+- git clone https://github.com/lokiuox/rsockstun
+- cd rsockstun
 - go build
-launch:
-./rsockstun -listen :8443 -socks 127.0.0.1:1080 -cert cert -agentpassword Password1234
 
 Windows client:
-- download and install golang
-- go get github.com/hashicorp/yamux
-- go get github.com/armon/go-socks5
-- go get github.com/ThomsonReutersEikon/go-ntlm/ntlm
-If you want to use proxy NTLM auth - patch go-ntlm\ntlm\payload.go packet:
-	bytes := utf16FromString(value) -> bytes := []byte(value)
-	p.Type = UnicodeStringPayload   -> p.Type = OemStringPayload
-- go build
-optional: to build as Windows GUI: go build -ldflags -H=windowsgui
-optional: to compress exe - use any exe packer, ex: UPX
-launch:
-rsockstun.exe -connect clientIP:8443 -agentpassword Password1234 -proxy proxy.domain.local:3128 -proxyauth Domain\userpame:userpass -useragent "Mozilla 5.0/IE Windows 10"
+- same as linux
+- optional: to build as Windows GUI: go build -ldflags -H=windowsgui
+- optional: to compress exe - use any exe packer, ex: UPX
+
+launch server:
+./rsockstun -listen :8443 -socks 127.0.0.1:1080 -cert cert -agentpassword Password1234
+
+launch client:
+rsockstun -connect clientIP:8443 -agentpassword Password1234 -proxy proxy.domain.local:3128 -proxyauth Domain\userpame:userpass -useragent "Mozilla 5.0/IE Windows 10"
 
 Client connects to server and send agentpassword to authorize on server. If server does not receive agentpassword or reveive wrong pass from client (for example if spider or client browser connects to server ) then it send HTTP 301 redirect code to www.microsoft.com
 ```
