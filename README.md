@@ -1,31 +1,55 @@
 rsockstun
 ======
 
-Reverse socks5 tunneler with SSL and proxy support
+Create a reverse SOCKS5 proxy via an SSL Tunnel, with support for HTTP proxies.
+Forked from https://github.com/llkat/rsockstun
 Based on https://github.com/brimstone/rsocks
 
 Usage:
 ------
 ```
+rsockstun - reverse socks5 server/client
 
-Usage:
-0) Generate self-signed certificate with openssl: openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes
-1) Start on VPS: rsockstun -listen :8443 -socks 127.0.0.1:1080 -cert cert  
-2) Start on client: rsockstun -connect clientIP:8443
-3) Connect to 127.0.0.1:1080 on the VPS with any socks5 client.
-4) Enjoy. :]
+SERVER MODE:
+./rsocktun server [-listen <listenAddr>] [-socks <socksAddr>] [options]
+Options:
+  -cert string
+    	Server certificate file prefix (default "server")
+  -listen string
+    	Listen address for client connections (default "0.0.0.0:8080")
+  -socks string
+    	Listen address for the SOCKS5 proxy (default "127.0.0.1:1080")
 
-Add params:
- -proxy 1.2.3.4:3128 - connect via proxy
- -proxyauth Domain/username:password  - proxy creds
- -proxytimeout 2000 - server and clients will wait for 2000 msec for proxy connections... (Sometime it should be up to 4000...)
- -useragent "Internet Explorer 9.99" - User-Agent used in proxy connection (sometimes it is usefull)
- -pass Password12345 - challenge password between client and server (if not match - server reply 301 redirect)
- -recn - reconnect times number. Default is 3. If 0 - infinite reconnection
- -rect - time delay in secs between reconnection attempts. Default is 30
- 
+CLIENT MODE:
+./rsocktun client -connect <connectAddr> [-proxy <proxyURI>] [options]
+Options:
+  -connect string
+    	address:port of the server to connect to
+  -proxy string
+    	URI of the proxy to use to connect to the server [optional]
+  -proxyauth string
+    	Proxy authentication in the format [Domain/]Username:Password [optional]
+  -proxytimeout int
+    	Proxy response timeout in seconds [optional] (default 1)
+  -recn int
+    	Reconnection limit, 0 for infinite [optional] (default 3)
+  -rect int
+    	Reconnection delay [optional] (default 30)
+  -useragent string
+    	User-Agent [optional] (default "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko")
 
-Compile and Installation:
+General Options:
+  -pass string
+    	Shared server/client password [optional]
+  -version
+    	Version information
+
+Note: you can generate a new server certificate with the following command:
+openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes
+
+ ```
+
+## Compile and Installation:
 
 Linux VPS
 - install Golang: apt install golang
@@ -52,5 +76,3 @@ launch:
 rsockstun.exe -connect clientIP:8443 -agentpassword Password1234 -proxy proxy.domain.local:3128 -proxyauth Domain\userpame:userpass -useragent "Mozilla 5.0/IE Windows 10"
 
 Client connects to server and send agentpassword to authorize on server. If server does not receive agentpassword or reveive wrong pass from client (for example if spider or client browser connects to server ) then it send HTTP 301 redirect code to www.microsoft.com
-
-```
