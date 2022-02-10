@@ -19,12 +19,13 @@ var session *yamux.Session
 var proxytout = time.Millisecond * 1000 //timeout for wait magicbytes
 // Catches yamux connecting to us
 func clientListener(address string, certificate string) {
-	log.Println("Listening for the far end")
+	log.Printf("Listening for clients on %v\n", address)
 
 	cer, err := tls.LoadX509KeyPair(certificate+".crt", certificate+".key")
 	if err != nil {
 		log.Println(err)
-		return
+		fmt.Fprintf(os.Stderr, "Please check the program's usage on how to generate a new SSL certificate.\n")
+		os.Exit(1)
 	}
 	config := &tls.Config{Certificates: []tls.Certificate{cer}}
 	ln, err := tls.Listen("tcp", address, config)
@@ -36,7 +37,7 @@ func clientListener(address string, certificate string) {
 		conn.RemoteAddr()
 		log.Printf("Got a SSL connection from %v: ", conn.RemoteAddr())
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Errors accepting!")
+			fmt.Fprintf(os.Stderr, "Errors accepting connection!")
 		}
 
 		reader := bufio.NewReader(conn)
@@ -79,7 +80,7 @@ func clientListener(address string, certificate string) {
 
 // Catches clients and connects to yamux
 func socksListener(address string) error {
-	log.Println("Listening for SOCKS connections")
+	log.Printf("Listening for SOCKS connections on %v\n", address)
 	ln, err := net.Listen("tcp", address)
 	if err != nil {
 		return err

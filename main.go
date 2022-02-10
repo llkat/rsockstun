@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -25,7 +24,7 @@ func main() {
 	connect := clientFlags.String("connect", "", "address:port of the server to connect to")
 	proxy := clientFlags.String("proxy", "", "URI of the proxy to use to connect to the server [optional]")
 	proxyauthstring := clientFlags.String("proxyauth", "", "Proxy authentication in the format [Domain/]Username:Password [optional]")
-	optproxytimeout := clientFlags.String("proxytimeout", "1", "Proxy response timeout in seconds [optional]")
+	optproxytimeout := clientFlags.Int("proxytimeout", 1, "Proxy response timeout in seconds [optional]")
 	optuseragent := clientFlags.String("useragent", "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko", "User-Agent [optional]")
 	recn := clientFlags.Int("recn", 3, "Reconnection limit, 0 for infinite [optional]")
 	rect := clientFlags.Int("rect", 30, "Reconnection delay [optional]")
@@ -37,6 +36,7 @@ func main() {
 	serverFlags.Usage = func() {
 		fmt.Println("SERVER MODE:")
 		fmt.Printf("%s server [-listen <listenAddr>] [-socks <socksAddr>] [options]\n", os.Args[0])
+		fmt.Println("Options:")
 		serverFlags.PrintDefaults()
 		fmt.Println()
 	}
@@ -44,6 +44,7 @@ func main() {
 	clientFlags.Usage = func() {
 		fmt.Println("CLIENT MODE:")
 		fmt.Printf("%s client -connect <connectAddr> [-proxy <proxyURI>] [options]\n", os.Args[0])
+		fmt.Println("Options:")
 		clientFlags.PrintDefaults()
 		fmt.Println()
 	}
@@ -52,8 +53,9 @@ func main() {
 		fmt.Println("rsockstun - reverse socks5 server/client")
 		fmt.Println()
 		serverFlags.Usage()
-		fmt.Println()
 		clientFlags.Usage()
+		fmt.Println("General Options:")
+		flag.PrintDefaults()
 		fmt.Println()
 		fmt.Println("Note: you can generate a new server certificate with the following command:")
 		fmt.Println("openssl req -new -x509 -keyout server.key -out server.crt -days 365 -nodes")
@@ -73,10 +75,7 @@ func main() {
 
 	// Defaults
 
-	if *optproxytimeout != "" {
-		opttimeout, _ := strconv.Atoi(*optproxytimeout)
-		proxytimeout = time.Millisecond * time.Duration(opttimeout)
-	}
+	proxytimeout = time.Duration(1000 * int(*optproxytimeout))
 
 	if *optpassword != "" {
 		agentpassword = *optpassword
@@ -90,13 +89,16 @@ func main() {
 
 	case "server":
 		// Server Mode
-		log.Println("Starting to listen for clients")
-
 		go clientListener(*listen, *certificate)
 		log.Fatal(socksListener(*socks))
 
 	case "client":
 		// Client Mode
+
+		if *connect == "" {
+			fmt.Println("Please specify a connect address!")
+			os.Exit(1)
+		}
 
 		if *proxyauthstring != "" {
 			userpass := *proxyauthstring
