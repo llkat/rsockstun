@@ -1,4 +1,4 @@
-module github.com/lokiuox/rsocktun
+module github.com/lokiuox/rsockstun
 
 go 1.17
 
