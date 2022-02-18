@@ -89,12 +89,13 @@ func main() {
 
 	case "server":
 		// Server Mode
+		serverFlags.Parse(os.Args[2:])
 		go clientListener(*listen, *certificate)
 		log.Fatal(socksListener(*socks))
 
 	case "client":
 		// Client Mode
-
+		clientFlags.Parse(os.Args[2:])
 		if *connect == "" {
 			fmt.Println("Please specify a connect address!")
 			os.Exit(1)
