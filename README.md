@@ -1,6 +1,6 @@
 rsockstun
 ======
-
+[![Go](https://github.com/lokiuox/rsockstun/actions/workflows/go.yml/badge.svg)](https://github.com/lokiuox/rsockstun/actions/workflows/go.yml)    
 Create a reverse SOCKS5 proxy via an SSL Tunnel, with support for HTTP proxies.    
 Forked from https://github.com/llkat/rsockstun    
 Based on https://github.com/brimstone/rsocks    
